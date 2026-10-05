@@ -1,4 +1,4 @@
-.PHONY: bootstrap demo test naive
+.PHONY: bootstrap demo test naive compare
 
 bootstrap:
 	python -m careops.bootstrap
@@ -11,3 +11,6 @@ test: bootstrap
 
 naive:
 	python examples/naive_rag.py "network eligibility credentialing escalation"
+
+compare: bootstrap
+	python examples/compare_rag.py

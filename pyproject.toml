@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "careops-trust-gateway"
-version = "0.1.0"
+version = "0.2.0"
 description = "Reference architecture for governed enterprise data access by AI agents"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -16,6 +16,7 @@ dependencies = []
 dev = ["pytest>=8"]
 mcp = ["mcp>=1.0"]
 dbt = ["dbt-core>=1.8", "dbt-duckdb>=1.8"]
+rag = ["openai>=1.40"]
 
 [tool.setuptools.packages.find]
 include = ["careops*", "evals*", "mcp_server*"]

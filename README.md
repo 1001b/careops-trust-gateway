@@ -138,22 +138,46 @@ If the required evidence is missing, the gateway returns an **insufficient evide
 
 ---
 
-## The deliberately unsafe comparison
+## The deliberately unsafe comparison (v0.1 lexical baseline)
 
-`examples/naive_rag.py` demonstrates the failure mode this architecture is designed to prevent.
+`examples/naive_rag.py` is a frozen lexical baseline. It has no authorization or effective-date concept, so a query can surface both a stale policy and a restricted policy. The governed v0.1 path moves those decisions **before** model context is assembled.
 
-The naive implementation:
+## Fair RAG comparison (v0.2)
+
+v0.2 adds a shared retrieval substrate so the naive vs governed contrast is an apples-to-apples experiment:
 
 ```text
-question -> search every document -> return top matches
+SAME corpus · SAME chunking · SAME embedder
+
+Naive     → top-k hybrid similarity over unfiltered chunks → (optional) GPT
+Governed  → role + effective-date filter BEFORE retrieval
+          → hybrid retrieve + RRF
+          → governed metric tool for quantitative facts
+          → (optional) GPT via OpenAI Responses API + tool calls
 ```
 
-It has no concept of caller authorization or policy effective dates. A query can therefore surface both:
+Offline (no API key; deterministic local embedder):
 
-- a stale policy; and
-- a restricted policy the caller should never have received.
+```bash
+pip install -e '.[dev]'
+python examples/compare_rag.py
+python -m careops.agent.cli --mode governed --role analyst --no-synthesize \
+  "Why did in-network appointment availability in Texas decline last week?"
+```
 
-The governed implementation moves those decisions **before** model context is assembled.
+With a server-side key (never commit secrets; see `.env.example`):
+
+```bash
+pip install -e '.[rag]'
+export OPENAI_API_KEY=...
+export CAREOPS_EMBEDDING_PROVIDER=openai
+python -m careops.agent.cli --mode naive --synthesize \
+  "network eligibility credentialing escalation"
+python -m careops.agent.cli --mode governed --role analyst --synthesize \
+  "Why did in-network appointment availability in Texas decline last week?"
+```
+
+The dependency-light v0.1 control plane remains the default review path and does **not** require an API key.
 
 ---
 
@@ -255,8 +279,6 @@ export DBT_PROFILES_DIR="$PWD"
 dbt seed && dbt run && dbt test
 ```
 
-If those commands are not run successfully in your environment, treat the dbt tree as an illustrative parallel to the SQLite gold view rather than a verified executable path.
-
 ---
 
 ## Data model
@@ -338,34 +360,24 @@ careops-trust-gateway/
 │   ├── decisions.md
 │   └── threat-model.md
 ├── careops/
+│   ├── agent/          # v0.2 naive|governed pipelines + optional GPT
+│   ├── rag/            # chunk, embed, filter, hybrid retrieve
 │   ├── bootstrap.py
-│   ├── cli.py
-│   ├── entities.py
+│   ├── cli.py          # v0.1 deterministic gateway CLI
 │   ├── gateway.py
 │   ├── metrics.py
-│   ├── paths.py
 │   ├── policy.py
-│   ├── router.py
-│   └── semantic.py
+│   └── ...
 ├── data/raw/
 ├── dbt/
-│   └── models/{bronze,silver,gold}/
 ├── evals/
-│   ├── cases.json
-│   └── run.py
 ├── examples/
-│   └── naive_rag.py
+│   ├── naive_rag.py    # v0.1 lexical unsafe baseline (frozen)
+│   └── compare_rag.py  # v0.2 fair naive vs governed
 ├── knowledge/
-│   ├── index.json
-│   └── policies/
 ├── mcp_server/
-│   └── server.py
 ├── semantic/
-│   ├── access.json
-│   ├── entities.json
-│   └── metrics.json
 └── tests/
-    └── test_gateway.py
 ```
 
 ---

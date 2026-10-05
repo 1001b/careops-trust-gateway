@@ -40,3 +40,7 @@ RETURN*.md
 *HANDOFF*
 *handoff*
 PUBLISH*.md
+V0.*.md
+
+# Embedding / RAG local caches
+data/embeddings/
