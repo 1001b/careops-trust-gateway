@@ -1,0 +1,6 @@
+provider_id,payer_network,effective_from,effective_to,status
+P001,Aetna,2025-01-01,,eligible
+P002,Aetna,2025-01-01,,eligible
+P003,Aetna,2025-01-01,2026-09-30,eligible
+P003,Aetna,2026-10-01,,pending
+P004,Aetna,2025-01-01,,eligible

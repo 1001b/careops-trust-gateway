@@ -1,0 +1,8 @@
+{
+  "provider": {
+    "canonical_key": "provider_id",
+    "display_field": "provider_name",
+    "resolver": "deterministic_exact_then_fuzzy",
+    "authority": "providers"
+  }
+}

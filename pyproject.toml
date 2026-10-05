@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "careops-trust-gateway"
+version = "0.1.0"
+description = "Reference architecture for governed enterprise data access by AI agents"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{name = "Jeffrey Law"}]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+mcp = ["mcp>=1.0"]
+dbt = ["dbt-core>=1.8", "dbt-duckdb>=1.8"]
+
+[tool.setuptools.packages.find]
+include = ["careops*", "evals*", "mcp_server*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

@@ -1,0 +1,69 @@
+[
+  {
+    "id": "auth-analyst-restricted",
+    "description": "Analyst cannot retrieve restricted credentialing policy",
+    "kind": "policy",
+    "role": "analyst",
+    "query": "credentialing escalation procedure",
+    "expect_ids": [],
+    "forbid_ids": [
+      "credentialing-escalation"
+    ]
+  },
+  {
+    "id": "auth-admin-restricted",
+    "description": "Clinical admin can retrieve restricted credentialing policy",
+    "kind": "policy",
+    "role": "clinical_admin",
+    "query": "credentialing escalation procedure",
+    "expect_ids": [
+      "credentialing-escalation"
+    ]
+  },
+  {
+    "id": "time-current-policy",
+    "description": "Current network policy wins; stale 2025 policy excluded",
+    "kind": "policy",
+    "role": "analyst",
+    "query": "network eligibility policy eligible pending",
+    "expect_ids": [
+      "network-policy-v2"
+    ],
+    "forbid_ids": [
+      "network-policy-v1"
+    ]
+  },
+  {
+    "id": "metric-last-week",
+    "description": "Deterministic last-week availability",
+    "kind": "metric",
+    "state": "TX",
+    "network": "Aetna",
+    "period": "last_week",
+    "expect": 24
+  },
+  {
+    "id": "metric-prior-week",
+    "description": "Deterministic prior-week availability",
+    "kind": "metric",
+    "state": "TX",
+    "network": "Aetna",
+    "period": "prior_week",
+    "expect": 42
+  },
+  {
+    "id": "router-mixed",
+    "description": "Why + availability routes to mixed",
+    "kind": "router",
+    "question": "Why did appointment availability decline last week?",
+    "expect": "mixed"
+  },
+  {
+    "id": "gateway-unknown",
+    "description": "Unsupported question abstains",
+    "kind": "gateway",
+    "role": "analyst",
+    "question": "What is the moon made of?",
+    "expect_status": "insufficient_evidence"
+  }
+]

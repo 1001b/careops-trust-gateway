@@ -1,0 +1,14 @@
+name: careops_trust_gateway
+version: '0.1.0'
+config-version: 2
+profile: careops_trust_gateway
+model-paths: ['models']
+seed-paths: ['seeds']
+models:
+  careops_trust_gateway:
+    bronze:
+      +materialized: view
+    silver:
+      +materialized: view
+    gold:
+      +materialized: table

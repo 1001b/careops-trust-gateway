@@ -1,0 +1,7 @@
+careops_trust_gateway:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: careops_dbt.duckdb
+      threads: 2

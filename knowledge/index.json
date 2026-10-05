@@ -1,0 +1,56 @@
+[
+  {
+    "id": "network-policy-v1",
+    "path": "knowledge/policies/network_eligibility_v1.md",
+    "topic": "network eligibility",
+    "effective_from": "2025-01-01",
+    "effective_to": "2025-12-31",
+    "authority": 1,
+    "class": "operations",
+    "roles": [
+      "analyst",
+      "operations",
+      "clinical_admin"
+    ]
+  },
+  {
+    "id": "network-policy-v2",
+    "path": "knowledge/policies/network_eligibility_v2.md",
+    "topic": "network eligibility",
+    "effective_from": "2026-01-01",
+    "effective_to": null,
+    "authority": 2,
+    "class": "operations",
+    "roles": [
+      "analyst",
+      "operations",
+      "clinical_admin"
+    ]
+  },
+  {
+    "id": "availability-definition",
+    "path": "knowledge/policies/availability_definition.md",
+    "topic": "appointment availability",
+    "effective_from": "2026-01-01",
+    "effective_to": null,
+    "authority": 2,
+    "class": "public",
+    "roles": [
+      "analyst",
+      "operations",
+      "clinical_admin"
+    ]
+  },
+  {
+    "id": "credentialing-escalation",
+    "path": "knowledge/policies/credentialing_escalation.md",
+    "topic": "credentialing escalation",
+    "effective_from": "2026-01-01",
+    "effective_to": null,
+    "authority": 2,
+    "class": "restricted",
+    "roles": [
+      "clinical_admin"
+    ]
+  }
+]

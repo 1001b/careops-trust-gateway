@@ -1,0 +1,20 @@
+{
+  "available_appointments": {
+    "definition": "Bookable appointment slots for active providers currently eligible for the requested payer network.",
+    "grain": [
+      "provider_id",
+      "slot_date",
+      "payer_network",
+      "state"
+    ],
+    "authority": "tool:get_metric",
+    "owner": "care-operations-data",
+    "freshness": "daily",
+    "dimensions": [
+      "state",
+      "payer_network",
+      "provider_id"
+    ],
+    "source": "gold_provider_availability_daily"
+  }
+}

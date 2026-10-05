@@ -1,0 +1,42 @@
+# Python / local env
+__pycache__/
+.pytest_cache/
+*.pyc
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Demo databases / warehouse artifacts
+careops_demo.db
+*.duckdb
+*.db
+
+# dbt local state (may contain absolute paths)
+target/
+logs/
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+dbt/packages/
+dbt/profiles.yml
+dbt/.user.yml
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+.cursor/
+
+# Private job-search / handoff / publish-ops materials — never publish
+RETURN*.md
+*PRIMARY_REVIEW*
+*HANDOFF*
+*handoff*
+PUBLISH*.md

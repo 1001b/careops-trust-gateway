@@ -1,0 +1,19 @@
+version: 2
+models:
+  - name: silver_providers
+    columns:
+      - name: provider_id
+        tests: [not_null, unique]
+  - name: silver_appointment_slots
+    columns:
+      - name: slot_id
+        tests: [not_null, unique]
+  - name: gold_provider_availability_daily
+    columns:
+      - name: slot_id
+        tests: [not_null, unique]
+      - name: is_bookable
+        tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]

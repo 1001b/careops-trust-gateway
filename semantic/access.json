@@ -1,0 +1,26 @@
+{
+  "roles": {
+    "analyst": {
+      "document_classes": [
+        "public",
+        "operations"
+      ],
+      "provider_detail": "masked"
+    },
+    "operations": {
+      "document_classes": [
+        "public",
+        "operations"
+      ],
+      "provider_detail": "standard"
+    },
+    "clinical_admin": {
+      "document_classes": [
+        "public",
+        "operations",
+        "restricted"
+      ],
+      "provider_detail": "full"
+    }
+  }
+}

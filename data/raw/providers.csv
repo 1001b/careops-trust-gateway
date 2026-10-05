@@ -1,0 +1,5 @@
+provider_id,provider_name,state,active_from,inactive_from
+P001,Alice Rivera,TX,2024-01-01,
+P002,Ben Chen,TX,2024-01-01,2026-09-30
+P003,Carla Diaz,TX,2024-01-01,
+P004,Evan Stone,CA,2024-01-01,
