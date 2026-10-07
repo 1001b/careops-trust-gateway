@@ -54,6 +54,8 @@ def test_governed_mixed_question_attaches_metric_authority():
     assert gov.metric["comparison"]["prior"]["value"] == 42
     assert gov.metric["comparison"]["current"]["value"] == 24
     assert "gold_provider_availability_daily" in gov.provenance
+    names = {c["provider_name"] for c in gov.metric["contributors"]}
+    assert "Ben Chen" in names and "Carla Diaz" in names
 
 
 def test_naive_mixed_question_has_no_metric_tool():

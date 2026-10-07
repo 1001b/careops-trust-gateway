@@ -16,7 +16,7 @@ dependencies = []
 dev = ["pytest>=8"]
 mcp = ["mcp>=1.0"]
 dbt = ["dbt-core>=1.8", "dbt-duckdb>=1.8"]
-rag = ["openai>=1.40"]
+rag = ["openai>=1.40", "google-genai>=1.0"]
 
 [tool.setuptools.packages.find]
 include = ["careops*", "evals*", "mcp_server*"]

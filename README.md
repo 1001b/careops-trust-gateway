@@ -165,17 +165,21 @@ python -m careops.agent.cli --mode governed --role analyst --no-synthesize \
   "Why did in-network appointment availability in Texas decline last week?"
 ```
 
-With a server-side key (never commit secrets; see `.env.example`):
+With a server-side key (never commit secrets; see `.env.example`). Gemini and OpenAI both support the same analyst role instructions + governed `get_metric` tool loop; embeddings can stay local so the fair retrieval experiment does not depend on a vendor embedding API:
 
 ```bash
 pip install -e '.[rag]'
-export OPENAI_API_KEY=...
-export CAREOPS_EMBEDDING_PROVIDER=openai
+export CAREOPS_EMBEDDING_PROVIDER=local
+export CAREOPS_LLM_PROVIDER=gemini
+export GEMINI_API_KEY=...          # set only in your shell / local .env
+export GEMINI_MODEL=gemini-3.8-flash
 python -m careops.agent.cli --mode naive --synthesize \
   "network eligibility credentialing escalation"
 python -m careops.agent.cli --mode governed --role analyst --synthesize \
   "Why did in-network appointment availability in Texas decline last week?"
 ```
+
+OpenAI alternative: `CAREOPS_LLM_PROVIDER=openai` + `OPENAI_API_KEY`.
 
 The dependency-light v0.1 control plane remains the default review path and does **not** require an API key.
 

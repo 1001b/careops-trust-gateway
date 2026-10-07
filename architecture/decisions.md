@@ -44,4 +44,4 @@
 
 **Why:** Comparing a governed system to a deliberately weaker lexical baseline overstates the architecture. A fair experiment isolates the control plane.
 
-**Consequence:** Offline CI uses a deterministic local embedder; OpenAI embeddings/Responses synthesis are optional and key-gated.
+**Consequence:** Offline CI uses a deterministic local embedder; LLM synthesis is optional and key-gated. Gemini and OpenAI are interchangeable synthesizers behind the same system prompt and governed tool allowlist; embeddings may remain local so fairness does not require a vendor embedding API.

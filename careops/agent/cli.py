@@ -14,7 +14,7 @@ def main():
     parser.add_argument(
         "--synthesize",
         action="store_true",
-        help="Force OpenAI Responses synthesis (requires OPENAI_API_KEY)",
+        help="Force LLM synthesis (Gemini or OpenAI; requires API key in env)",
     )
     parser.add_argument(
         "--no-synthesize",

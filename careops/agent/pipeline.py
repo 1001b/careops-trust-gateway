@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, asdict
 from datetime import date
-import json
-import os
 import re
 
-from careops.metrics import compare_availability, get_metric
+from careops.agent.llm import llm_configured, synthesize_with_model as _synthesize_with_model
+from careops.metrics import compare_availability, provider_contributors
 from careops.rag.corpus import chunk_to_dict, load_chunks
 from careops.rag.embed import Embedder, get_embedder
 from careops.rag.filters import filter_chunks
@@ -117,9 +116,11 @@ def retrieve_evidence(
     wants_metric = route in {"metric", "mixed"} or bool(METRIC_HINT.search(question))
     if mode == "governed" and wants_metric:
         cmp = compare_availability(state="TX", payer_network="Aetna")
+        contributors = provider_contributors(state="TX", payer_network="Aetna")
         metric = {
             "tool": "get_metric",
             "comparison": cmp,
+            "contributors": contributors,
             "authority": "tool:get_metric",
             "source": "gold_provider_availability_daily",
         }
@@ -150,139 +151,8 @@ def retrieve_evidence(
 
 
 def synthesize_with_model(question: str, evidence: EvidenceBundle) -> dict:
-    """Optional GPT synthesis via OpenAI Responses API. Requires OPENAI_API_KEY."""
-    if not os.environ.get("OPENAI_API_KEY"):
-        return {
-            "status": "model_unavailable",
-            "answer": None,
-            "reason": "OPENAI_API_KEY not set",
-            "evidence": evidence.as_dict(),
-        }
-    try:
-        from openai import OpenAI
-    except ImportError as exc:
-        raise SystemExit("Install RAG extras: pip install -e '.[rag]'") from exc
-
-    model = os.environ.get("OPENAI_MODEL", "gpt-4.1-mini")
-    client = OpenAI()
-
-    system = (
-        "You are an operations analyst. You may reason over the provided evidence bundle only. "
-        "You must not invent authoritative metrics, eligibility statuses, or policy text. "
-        "If evidence.status is insufficient_evidence, or required facts are missing, say so explicitly. "
-        "Cite sources by path/doc_id. Quantitative values may only come from evidence.metric "
-        "or successful get_metric tool results."
-    )
-    user = (
-        f"Question: {question}\n\n"
-        f"Mode: {evidence.mode}\n"
-        f"Evidence JSON:\n{json.dumps(evidence.as_dict())}"
-    )
-
-    tools = []
-    if evidence.mode == "governed":
-        tools = [
-            {
-                "type": "function",
-                "name": "get_metric",
-                "description": "Return an authoritative governed metric. Demo supports available_appointments.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "metric": {"type": "string"},
-                        "state": {"type": "string"},
-                        "payer_network": {"type": "string"},
-                        "period": {"type": "string", "enum": ["last_week", "prior_week"]},
-                    },
-                    "required": ["metric", "state", "payer_network", "period"],
-                    "additionalProperties": False,
-                },
-            }
-        ]
-
-    input_messages: list[dict] = [
-        {"role": "developer", "content": system},
-        {"role": "user", "content": user},
-    ]
-    max_out = int(os.environ.get("CAREOPS_MAX_OUTPUT_TOKENS", "600"))
-
-    for _ in range(3):
-        kwargs: dict = {
-            "model": model,
-            "input": input_messages,
-            "max_output_tokens": max_out,
-        }
-        if tools:
-            kwargs["tools"] = tools
-        try:
-            response = client.responses.create(**kwargs)
-        except Exception as exc:  # noqa: BLE001
-            return {
-                "status": "model_unavailable",
-                "answer": None,
-                "reason": f"OpenAI Responses API failed: {exc}",
-                "evidence": evidence.as_dict(),
-            }
-
-        tool_calls = []
-        text_bits = []
-        for item in response.output:
-            item_type = getattr(item, "type", None)
-            if item_type == "function_call":
-                tool_calls.append(item)
-            elif item_type == "message":
-                for part in getattr(item, "content", []) or []:
-                    if getattr(part, "type", None) == "output_text":
-                        text_bits.append(part.text)
-
-        if not tool_calls:
-            answer_text = getattr(response, "output_text", None) or "\n".join(text_bits)
-            return {
-                "status": "ok" if evidence.status == "ok" else evidence.status,
-                "answer": answer_text,
-                "model": model,
-                "evidence": evidence.as_dict(),
-            }
-
-        for call in tool_calls:
-            input_messages.append(
-                {
-                    "type": "function_call",
-                    "call_id": call.call_id,
-                    "name": call.name,
-                    "arguments": call.arguments,
-                }
-            )
-            if call.name == "get_metric":
-                args = json.loads(call.arguments)
-                result = get_metric(
-                    args.get("metric", "available_appointments"),
-                    state=args.get("state", "TX"),
-                    payer_network=args.get("payer_network", "Aetna"),
-                    period=args.get("period", "last_week"),
-                ).as_dict()
-                input_messages.append(
-                    {
-                        "type": "function_call_output",
-                        "call_id": call.call_id,
-                        "output": json.dumps(result),
-                    }
-                )
-            else:
-                input_messages.append(
-                    {
-                        "type": "function_call_output",
-                        "call_id": call.call_id,
-                        "output": '{"error":"tool_not_allowed"}',
-                    }
-                )
-
-    return {
-        "status": "ok",
-        "answer": "Tool loop exceeded bound without final answer.",
-        "model": model,
-        "evidence": evidence.as_dict(),
-    }
+    """Optional LLM synthesis (Gemini or OpenAI). Keys from environment only."""
+    return _synthesize_with_model(question, evidence.as_dict())
 
 
 def answer(
@@ -302,7 +172,7 @@ def answer(
             "reason": str(exc),
             "evidence": None,
         }
-    use_model = synthesize if synthesize is not None else bool(os.environ.get("OPENAI_API_KEY"))
+    use_model = synthesize if synthesize is not None else llm_configured()
     if not use_model:
         if evidence.status == "insufficient_evidence":
             text = "Insufficient governed evidence for this request."
