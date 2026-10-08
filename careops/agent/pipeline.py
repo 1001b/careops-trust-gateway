@@ -6,11 +6,12 @@ import re
 
 from careops.agent.llm import llm_configured, synthesize_with_model as _synthesize_with_model
 from careops.metrics import compare_availability, provider_contributors
-from careops.rag.corpus import chunk_to_dict, load_chunks
+from careops.rag.corpus import Chunk, chunk_to_dict, load_chunks
 from careops.rag.embed import Embedder, get_embedder
 from careops.rag.filters import filter_chunks
 from careops.rag.retrieve import hybrid_retrieve
 from careops.router import classify
+from careops.storage import using_postgres
 
 METRIC_HINT = re.compile(
     r"how many|availability|decline|increase|decrease|last week|prior week|slots",
@@ -85,18 +86,39 @@ def retrieve_evidence(
     embedder = embedder or get_embedder()
     route = classify(question)
     notes: list[str] = []
-    all_chunks = load_chunks()
+    doc_vecs: list[list[float]] | None = None
+    if using_postgres():
+        from careops.storage.postgres import load_chunks_with_embeddings
+
+        all_chunks, all_vecs = load_chunks_with_embeddings()
+        notes.append("chunks_and_embeddings_loaded_from_postgres_pgvector")
+    else:
+        all_chunks = load_chunks()
+        all_vecs = None
 
     if mode == "governed":
-        pool = filter_chunks(all_chunks, role=role, as_of=as_of)
+        if all_vecs is None:
+            pool = filter_chunks(all_chunks, role=role, as_of=as_of)
+            doc_vecs = None
+        else:
+            kept: list[Chunk] = []
+            kept_vecs: list[list[float]] = []
+            allowed = filter_chunks(all_chunks, role=role, as_of=as_of)
+            allowed_ids = {c.chunk_id for c in allowed}
+            for chunk, vec in zip(all_chunks, all_vecs, strict=True):
+                if chunk.chunk_id in allowed_ids:
+                    kept.append(chunk)
+                    kept_vecs.append(vec)
+            pool, doc_vecs = kept, kept_vecs
         notes.append("authz_and_effective_date_applied_before_retrieval")
         role_out: str | None = role
     else:
         pool = all_chunks
+        doc_vecs = all_vecs
         role_out = None
         notes.append("no_authz_or_effective_date_filtering")
 
-    hits = hybrid_retrieve(question, pool, embedder, limit=limit)
+    hits = hybrid_retrieve(question, pool, embedder, limit=limit, doc_vecs=doc_vecs)
     chunk_dicts = []
     provenance: list[str] = []
     for hit in hits:

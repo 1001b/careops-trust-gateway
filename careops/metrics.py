@@ -8,6 +8,7 @@ from typing import Any
 from .bootstrap import bootstrap
 from .paths import DB_PATH
 from .semantic import metric_definition
+from .storage import using_postgres
 
 REFERENCE_DATE = date(2026, 10, 5)  # fixed demo clock for reproducible evaluations
 
@@ -41,31 +42,54 @@ def _period_bounds(period: str):
     return start, end
 
 
-def _ensure_db():
+def _ensure_sqlite():
     if not DB_PATH.exists():
         bootstrap()
+
+
+def _pg_connect():
+    from careops.storage.postgres import _connect
+
+    return _connect()
 
 
 def get_metric(metric: str, *, state: str, payer_network: str, period: str) -> MetricResult:
     if metric != "available_appointments":
         raise KeyError(f"Demo implements only available_appointments, got {metric}")
-    _ensure_db()
     definition = metric_definition(metric)
     start, end = _period_bounds(period)
-    conn = sqlite3.connect(DB_PATH)
-    try:
-        row = conn.execute(
-            """
-            SELECT COALESCE(SUM(is_bookable), 0)
-            FROM gold_provider_availability_daily
-            WHERE state = ? AND payer_network = ?
-              AND date(slot_date) BETWEEN date(?) AND date(?)
-            """,
-            (state, payer_network, start.isoformat(), end.isoformat()),
-        ).fetchone()
-        value = int(row[0])
-    finally:
-        conn.close()
+    if using_postgres():
+        conn = _pg_connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT COALESCE(SUM(is_bookable), 0)
+                    FROM gold_provider_availability_daily
+                    WHERE state = %s AND payer_network = %s
+                      AND slot_date BETWEEN %s AND %s
+                    """,
+                    (state, payer_network, start.isoformat(), end.isoformat()),
+                )
+                value = int(cur.fetchone()[0])
+        finally:
+            conn.close()
+    else:
+        _ensure_sqlite()
+        conn = sqlite3.connect(DB_PATH)
+        try:
+            row = conn.execute(
+                """
+                SELECT COALESCE(SUM(is_bookable), 0)
+                FROM gold_provider_availability_daily
+                WHERE state = ? AND payer_network = ?
+                  AND date(slot_date) BETWEEN date(?) AND date(?)
+                """,
+                (state, payer_network, start.isoformat(), end.isoformat()),
+            ).fetchone()
+            value = int(row[0])
+        finally:
+            conn.close()
     return MetricResult(
         metric=metric,
         value=value,
@@ -88,28 +112,73 @@ def compare_availability(*, state: str, payer_network: str):
 
 
 def provider_contributors(*, state: str, payer_network: str):
-    _ensure_db()
     prior_start, prior_end = _period_bounds("prior_week")
     cur_start, cur_end = _period_bounds("last_week")
-    conn = sqlite3.connect(DB_PATH)
-    try:
-        rows = conn.execute(
-            """
-            SELECT provider_id, provider_name,
-                   SUM(CASE WHEN date(slot_date) BETWEEN date(?) AND date(?) THEN is_bookable ELSE 0 END) AS prior_slots,
-                   SUM(CASE WHEN date(slot_date) BETWEEN date(?) AND date(?) THEN is_bookable ELSE 0 END) AS current_slots
-            FROM gold_provider_availability_daily
-            WHERE state = ? AND payer_network = ?
-              AND date(slot_date) BETWEEN date(?) AND date(?)
-            GROUP BY provider_id, provider_name
-            ORDER BY (current_slots - prior_slots) ASC, provider_id
-            """,
-            (prior_start.isoformat(), prior_end.isoformat(), cur_start.isoformat(), cur_end.isoformat(),
-             state, payer_network, prior_start.isoformat(), cur_end.isoformat()),
-        ).fetchall()
-    finally:
-        conn.close()
+    if using_postgres():
+        conn = _pg_connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT provider_id, provider_name,
+                           SUM(CASE WHEN slot_date BETWEEN %s AND %s THEN is_bookable ELSE 0 END) AS prior_slots,
+                           SUM(CASE WHEN slot_date BETWEEN %s AND %s THEN is_bookable ELSE 0 END) AS current_slots
+                    FROM gold_provider_availability_daily
+                    WHERE state = %s AND payer_network = %s
+                      AND slot_date BETWEEN %s AND %s
+                    GROUP BY provider_id, provider_name
+                    """,
+                    (
+                        prior_start.isoformat(),
+                        prior_end.isoformat(),
+                        cur_start.isoformat(),
+                        cur_end.isoformat(),
+                        state,
+                        payer_network,
+                        prior_start.isoformat(),
+                        cur_end.isoformat(),
+                    ),
+                )
+                rows = cur.fetchall()
+        finally:
+            conn.close()
+        rows = sorted(rows, key=lambda r: (int(r[3]) - int(r[2]), r[0]))
+    else:
+        _ensure_sqlite()
+        conn = sqlite3.connect(DB_PATH)
+        try:
+            rows = conn.execute(
+                """
+                SELECT provider_id, provider_name,
+                       SUM(CASE WHEN date(slot_date) BETWEEN date(?) AND date(?) THEN is_bookable ELSE 0 END) AS prior_slots,
+                       SUM(CASE WHEN date(slot_date) BETWEEN date(?) AND date(?) THEN is_bookable ELSE 0 END) AS current_slots
+                FROM gold_provider_availability_daily
+                WHERE state = ? AND payer_network = ?
+                  AND date(slot_date) BETWEEN date(?) AND date(?)
+                GROUP BY provider_id, provider_name
+                ORDER BY (current_slots - prior_slots) ASC, provider_id
+                """,
+                (
+                    prior_start.isoformat(),
+                    prior_end.isoformat(),
+                    cur_start.isoformat(),
+                    cur_end.isoformat(),
+                    state,
+                    payer_network,
+                    prior_start.isoformat(),
+                    cur_end.isoformat(),
+                ),
+            ).fetchall()
+        finally:
+            conn.close()
     return [
-        {"provider_id": r[0], "provider_name": r[1], "prior_slots": int(r[2]), "current_slots": int(r[3]), "delta": int(r[3]-r[2])}
-        for r in rows if int(r[3]-r[2]) != 0
+        {
+            "provider_id": r[0],
+            "provider_name": r[1],
+            "prior_slots": int(r[2]),
+            "current_slots": int(r[3]),
+            "delta": int(r[3] - r[2]),
+        }
+        for r in rows
+        if int(r[3] - r[2]) != 0
     ]

@@ -50,11 +50,15 @@ def hybrid_retrieve(
     *,
     limit: int = 5,
     candidate_pool: int = 20,
+    doc_vecs: list[list[float]] | None = None,
 ) -> list[ScoredChunk]:
     if not chunks:
         return []
-    texts = [f"{c.topic}\n{c.text}" for c in chunks]
-    doc_vecs = embedder.embed(texts)
+    if doc_vecs is None:
+        texts = [f"{c.topic}\n{c.text}" for c in chunks]
+        doc_vecs = embedder.embed(texts)
+    if len(doc_vecs) != len(chunks):
+        raise ValueError("doc_vecs length must match chunks")
     q_vec = embedder.embed([query])[0]
 
     dense_ranked = sorted(

@@ -44,3 +44,10 @@ V0.*.md
 
 # Embedding / RAG local caches
 data/embeddings/
+
+# Local Azure / deploy parameter files with secrets
+deploy/azure/parameters.local.json
+deploy/azure/*.local.json
+deploy/azure/careops_azure.env
+deploy/azure/.careops-azure.state
+

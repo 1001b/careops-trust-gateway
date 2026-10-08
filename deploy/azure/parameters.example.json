@@ -1,0 +1,16 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": { "value": "eastus2" },
+    "namePrefix": { "value": "careops-demo" },
+    "postgresAdminLogin": { "value": "careopsadmin" },
+    "postgresAdminPassword": { "value": "REPLACE_WITH_STRONG_PASSWORD" },
+    "containerImage": { "value": "ghcr.io/YOUR_GH_USER/careops-trust-gateway:latest" },
+    "postgresSkuName": { "value": "Standard_D2s_v3" },
+    "postgresSkuTier": { "value": "GeneralPurpose" },
+    "geminiApiKey": { "value": "" },
+    "minReplicas": { "value": 0 },
+    "maxReplicas": { "value": 2 }
+  }
+}
