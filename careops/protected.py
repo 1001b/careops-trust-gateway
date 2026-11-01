@@ -6,6 +6,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from time import perf_counter
 
+from careops.conformance import governed_view
 from careops.freshness import FreshnessError, evaluate, not_applicable
 from careops.gateway import answer as gateway_answer
 from careops.governance import ContractError, apply_field_policy, authorize, validate_contracts
@@ -94,7 +95,17 @@ def protected_query(
     source_ids: list[str] = []
     retrieval_attempted = False
 
-    def finish(*, http_status: int, outcome: str, reason_code: str, evidence, answer, extra: dict | None = None):
+    def finish(
+        *,
+        http_status: int,
+        outcome: str,
+        reason_code: str,
+        evidence,
+        answer,
+        extra: dict | None = None,
+        as_of: str | None = None,
+        provenance: list[str] | None = None,
+    ):
         contract_id = None
         contract_version = None
         try:
@@ -142,6 +153,15 @@ def protected_query(
             }
         if extra:
             body.update(extra)
+        label = freshness.state if freshness is not None else "not_evaluated"
+        body["governed"] = governed_view(
+            outcome=outcome,
+            reason_code=reason_code,
+            evidence=evidence,
+            as_of=as_of,
+            provenance=provenance,
+            freshness=label,
+        )
         return body
 
     try:
@@ -198,6 +218,8 @@ def protected_query(
                     "metric_contract_version": contract["contract_version"],
                     "route": route,
                 },
+                as_of=freshness.evaluated_at[:10] if freshness.evaluated_at else None,
+                provenance=list(source_ids),
             )
     else:
         freshness = not_applicable(contract["source"], contract["metric_id"])
@@ -244,4 +266,6 @@ def protected_query(
             "metric_contract_version": contract["contract_version"],
             "route": raw.route,
         },
+        as_of=raw.as_of,
+        provenance=list(raw.provenance),
     )

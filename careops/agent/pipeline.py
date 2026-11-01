@@ -6,6 +6,7 @@ import re
 
 from careops.agent.llm import llm_configured, synthesize_with_model as _synthesize_with_model
 from careops.metrics import compare_availability, provider_contributors
+from careops.question import asked_network, asked_state
 from careops.rag.corpus import Chunk, chunk_to_dict, load_chunks
 from careops.rag.embed import Embedder, get_embedder
 from careops.rag.filters import filter_chunks
@@ -137,8 +138,10 @@ def retrieve_evidence(
     metric = None
     wants_metric = route in {"metric", "mixed"} or bool(METRIC_HINT.search(question))
     if mode == "governed" and wants_metric:
-        cmp = compare_availability(state="TX", payer_network="Aetna")
-        contributors = provider_contributors(state="TX", payer_network="Aetna")
+        state = asked_state(question)
+        network = asked_network(question)
+        cmp = compare_availability(state=state, payer_network=network)
+        contributors = provider_contributors(state=state, payer_network=network)
         metric = {
             "tool": "get_metric",
             "comparison": cmp,

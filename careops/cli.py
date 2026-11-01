@@ -2,7 +2,15 @@ from __future__ import annotations
 
 import argparse
 import json
+
+from .conformance import project_gateway_payload
 from .gateway import answer
+
+
+def respond(question: str, role: str = "analyst") -> dict:
+    payload = answer(question, role=role).as_dict()
+    payload["governed"] = project_gateway_payload(payload)
+    return payload
 
 
 def main():
@@ -10,8 +18,7 @@ def main():
     parser.add_argument("question")
     parser.add_argument("--role", default="analyst", choices=["analyst", "operations", "clinical_admin"])
     args = parser.parse_args()
-    response = answer(args.question, role=args.role)
-    print(json.dumps(response.as_dict(), indent=2))
+    print(json.dumps(respond(args.question, args.role), indent=2))
 
 
 if __name__ == "__main__":

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, asdict
 from datetime import date
-import re
 
+from .question import asked_network, asked_state
 from .router import classify
 from .metrics import compare_availability, provider_contributors, get_metric
 from .policy import search_policy
@@ -22,26 +22,12 @@ class GatewayResponse:
         return asdict(self)
 
 
-def _extract_state(question: str) -> str:
-    q = question.lower()
-    if "texas" in q or re.search(r"\btx\b", q):
-        return "TX"
-    if "california" in q or re.search(r"\bca\b", q):
-        return "CA"
-    return "TX"  # demo default, intentionally explicit in output
-
-
-def _extract_network(question: str) -> str:
-    # Demo uses a single payer network. In production this would resolve through a governed entity registry.
-    return "Aetna"
-
-
 def answer(question: str, *, role: str, as_of: date = date(2026, 10, 5)) -> GatewayResponse:
     route = classify(question)
     evidence: list[dict] = []
     provenance: list[str] = []
-    state = _extract_state(question)
-    network = _extract_network(question)
+    state = asked_state(question)
+    network = asked_network(question)
 
     if route in {"metric", "mixed"}:
         comparison = compare_availability(state=state, payer_network=network)

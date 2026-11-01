@@ -77,7 +77,7 @@ Rules for the future field set:
 
 - `authority` remains `tool:get_metric`.
 - A change to definition, grain, filter semantics, or the numeric result requires a new `contract_version`.
-- Missing version bump on a semantic or access change is a failed replay (see ADR-013). The replay command is TC-05.
+- Missing version bump on a semantic or access change is a failed replay (see ADR-013). The replay command is `python -m evals.replay`.
 - `classification` and `allowed_purposes` are inputs to field policy. They do not by themselves mask rows.
 - Freshness is the check `source_age <= freshness_slo` in `careops.freshness`. Age is the demo clock minus `loaded_at`. A miss on a protected metric route returns `stale_evidence` and does not call a model. The word `daily` does not perform that check.
 
@@ -130,7 +130,7 @@ dbt is build-time documentation of the bookability predicate. Request-time autho
 
 `careops.agent.llm` tells the model that quantitative values come from `evidence.metric` or a successful `get_metric` tool result. The governed agent path fills `evidence.metric` from `compare_availability` before synthesis. The naive path has no metric tool.
 
-Known adapter gap, left for TC-05: `careops.gateway.answer` parses state from the question and defaults to `TX`. `careops.agent.pipeline` calls `compare_availability(state="TX", payer_network="Aetna")` for every metric question. Both paths agree on the flagship Texas / Aetna question. They are not a general conformance pair.
+`careops.gateway.answer` and the governed agent path both read state and network through `careops.question`. The flagship question stays Texas / Aetna, prior 42 and last 24. A California question uses `CA` on both paths.
 
 ## Flagship facts that are not on the tag
 

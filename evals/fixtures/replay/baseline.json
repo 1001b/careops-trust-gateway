@@ -1,0 +1,75 @@
+{
+  "metric": {
+    "metric_id": "available_appointments",
+    "contract_version": 1,
+    "status": "active",
+    "definition": "Bookable appointment slots for active providers currently eligible for the requested payer network.",
+    "grain": ["provider_id", "slot_date", "payer_network", "state"],
+    "authority": "tool:get_metric",
+    "owner": "care-operations-data",
+    "source": "gold_provider_availability_daily",
+    "freshness": "daily",
+    "freshness_slo_minutes": 1440,
+    "dimensions": ["state", "payer_network", "provider_id"],
+    "effective_from": "2026-01-01",
+    "classification": "internal",
+    "allowed_purposes": ["operations_analysis"],
+    "compatibility": "backward_compatible",
+    "deprecation": null,
+    "fact_grain": "slot_id",
+    "consumers": ["careops.metrics.get_metric"]
+  },
+  "policy": {
+    "policy_id": "provider-detail-access",
+    "policy_version": 1,
+    "organization_id": "tenant-demo",
+    "rules": [
+      {
+        "rule_id": "provider_detail_analyst",
+        "principal_roles": ["analyst"],
+        "organization_scope": "same_tenant",
+        "allowed_purposes": ["operations_analysis"],
+        "allowed_classes": ["public", "operations"],
+        "field_actions": {"credential_notes": "deny", "provider_name": "mask"}
+      },
+      {
+        "rule_id": "provider_detail_operations",
+        "principal_roles": ["operations"],
+        "organization_scope": "same_tenant",
+        "allowed_purposes": ["operations_analysis"],
+        "allowed_classes": ["public", "operations"],
+        "field_actions": {"credential_notes": "deny", "provider_name": "allow"}
+      },
+      {
+        "rule_id": "provider_detail_clinical_admin",
+        "principal_roles": ["clinical_admin"],
+        "organization_scope": "same_tenant",
+        "allowed_purposes": ["operations_analysis"],
+        "allowed_classes": ["public", "operations", "restricted"],
+        "field_actions": {"credential_notes": "allow", "provider_name": "allow"}
+      }
+    ]
+  },
+  "access": {
+    "roles": {
+      "analyst": {"document_classes": ["public", "operations"], "provider_detail": "masked"},
+      "operations": {"document_classes": ["public", "operations"], "provider_detail": "standard"},
+      "clinical_admin": {
+        "document_classes": ["public", "operations", "restricted"],
+        "provider_detail": "full"
+      }
+    }
+  },
+  "authoritative": {"prior": 42, "current": 24},
+  "response_fields": [
+    "metric_id",
+    "contract_version",
+    "value",
+    "as_of",
+    "period",
+    "provenance",
+    "freshness",
+    "outcome",
+    "reason_code"
+  ]
+}

@@ -136,9 +136,11 @@ Until TC-03, the enforced control remains document class plus role, applied befo
 
 ## Conformance target
 
-Later cards compare one governed result across the core, `POST /v1/query`, and the CLI/demo adapter. MCP stays at `get_metric`, `explain_metric`, `search_policy`, and `resolve_entity` unless a separate qualification extends it.
+TC-05 compares one `governed` view across `careops.gateway.answer`, `POST /v1/query`, and `python -m careops.cli`. The fields are metric id, contract version, prior and current values, as-of date, period, provenance, freshness, outcome, and reason code. CLI and the HTTP handler call those core functions. They do not calculate the metric or decide field policy.
 
-Compared fields: metric id, contract version, value, period, authorization outcome, freshness, provenance, and denial or abstention reason. Adapters do not grow formulas. `careops.gateway.answer` and `careops.agent.answer` both stay. The agent metric path hardcodes Texas / Aetna; the gateway parses state and defaults to Texas. They match on the flagship question. Closing the general case is TC-05.
+`python -m evals.replay --base <baseline> --candidate <candidate>` compares access, masking, grain, freshness, the authoritative 42 and 24, and the response fields. A wider grant fails. A grain, freshness, metric, or response break fails when the matching version does not change. An added metric field with a new `contract_version` passes. Exit status is non-zero when the report is not ok.
+
+MCP stays at `get_metric`, `explain_metric`, `search_policy`, and `resolve_entity`. That file is not a protected query endpoint.
 
 ## Acceptance traced here
 
