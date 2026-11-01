@@ -1,5 +1,8 @@
 {
   "available_appointments": {
+    "metric_id": "available_appointments",
+    "contract_version": 1,
+    "status": "active",
     "definition": "Bookable appointment slots for active providers currently eligible for the requested payer network.",
     "grain": [
       "provider_id",
@@ -9,12 +12,24 @@
     ],
     "authority": "tool:get_metric",
     "owner": "care-operations-data",
+    "source": "gold_provider_availability_daily",
     "freshness": "daily",
+    "freshness_slo_minutes": 1440,
     "dimensions": [
       "state",
       "payer_network",
       "provider_id"
     ],
-    "source": "gold_provider_availability_daily"
+    "effective_from": "2026-01-01",
+    "classification": "internal",
+    "allowed_purposes": [
+      "operations_analysis"
+    ],
+    "compatibility": "backward_compatible",
+    "deprecation": null,
+    "fact_grain": "slot_id",
+    "consumers": [
+      "careops.metrics.get_metric"
+    ]
   }
 }

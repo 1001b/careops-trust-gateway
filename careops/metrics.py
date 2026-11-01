@@ -16,6 +16,7 @@ REFERENCE_DATE = date(2026, 10, 5)  # fixed demo clock for reproducible evaluati
 @dataclass
 class MetricResult:
     metric: str
+    contract_version: int
     value: int | float
     filters: dict[str, Any]
     period_start: str
@@ -92,6 +93,7 @@ def get_metric(metric: str, *, state: str, payer_network: str, period: str) -> M
             conn.close()
     return MetricResult(
         metric=metric,
+        contract_version=int(definition["contract_version"]),
         value=value,
         filters={"state": state, "payer_network": payer_network},
         period_start=start.isoformat(),

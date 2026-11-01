@@ -3,7 +3,7 @@
 **Status:** TC-01 specification freeze. No runtime change.
 **Baseline:** git tag `careops-v0.3-qualified`.
 **Authority:** v0.4 system design, with this file recording where an example name differs from the tagged code.
-**Implements later:** TC-02. This document does not add models, fixtures, or tests.
+**TC-02:** Contract version 1 is published in `semantic/metrics.json`. The freshness gate is still TC-04.
 
 ## Decision
 
@@ -35,7 +35,7 @@ Locked by `tests/test_gateway.py` (`test_metric_values_are_deterministic`) and `
 | `dimensions` | `state`, `payer_network`, `provider_id` |
 | `source` | `gold_provider_availability_daily` |
 
-`MetricResult` returns `metric`, `value`, `filters`, `period_start`, `period_end`, `authority`, `source`, `definition`, and `grain`. There is no `contract_version` on the object or in the JSON file. Freshness is a label, not a gate. This freeze does not invent a version number for the baseline file.
+On the qualified tag, `MetricResult` had no `contract_version` and freshness was only the label `daily`. TC-02 publishes contract version 1 and copies that version onto `MetricResult`. The label `daily` remains. The SLO check is still TC-04.
 
 ## Target contract
 
@@ -51,21 +51,25 @@ Qualified identifiers remain in force:
 | grain `organization_id`, `provider_id`, `network_id`, `service_date` | `provider_id`, `slot_date`, `payer_network`, `state` | TC-02 may add `organization_id`. It does not rename the columns that produce 42 and 24. |
 | `staging/` then `dim_*` / `fct_*` | `dbt/models/{bronze,silver,gold}` | Conceptual layout only. Section 38 of the system design forbids a cosmetic move. |
 
+Published values:
+
 ```yaml
 metric_id: available_appointments
-contract_version:            # unpublished; do not write 3 into the baseline file
-status:
+contract_version: 1          # not the system-design illustration of 3
+status: active
 owner: care-operations-data
 authority: tool:get_metric
 source: gold_provider_availability_daily
 grain: [provider_id, slot_date, payer_network, state]
 dimensions: [state, payer_network, provider_id]
-effective_from:
-classification:
-freshness_slo_minutes:       # target example is 1440, meaning the existing "daily" label
-allowed_purposes:
-compatibility:
-deprecation:
+effective_from: 2026-01-01   # same era as network-policy-v2; not a new metric
+classification: internal
+freshness_slo_minutes: 1440  # the existing "daily" label, not yet a gate
+allowed_purposes: [operations_analysis]
+compatibility: backward_compatible
+deprecation: null
+fact_grain: slot_id
+consumers: [careops.metrics.get_metric]
 ```
 
 Rules for the future field set:
@@ -85,11 +89,11 @@ Two grains exist and both stay:
 | Gold table | one row per `slot_id` | `dbt/models/gold/gold_provider_availability_daily.sql` |
 | Metric | sum of `is_bookable` over `state`, `payer_network`, and a week window | `careops.metrics.get_metric` |
 
-`dbt/models/schema.yml` checks `slot_id` not null and unique, and `is_bookable` in `{0, 1}`, on silver providers, silver slots, and gold. There is no referential-integrity test, no reconciliation test, and no fanout fixture.
+`dbt/models/schema.yml` checks not-null, unique, accepted values, and referential integrity from slots and networks back to providers. `dbt/tests/assert_gold_reconciles_to_slots.sql` checks gold row identity against slots. `dbt/tests/assert_network_grain.sql` checks the network composite grain. `tests/test_data_product.py` reconciles `SUM(is_bookable)` to `get_metric`.
 
 The system design's fanout illustration is a separate broken model: two network rows times ten capacity rows becoming twenty. That is not a description of current gold. Current gold uses `EXISTS` for network eligibility, so an effective-dated second network row does not multiply slots. P003 already has two Aetna rows (`eligible` through 2026-09-30, `pending` from 2026-10-01) in `data/raw/provider_networks.csv`. P002 is inactive from 2026-09-30. Those rows are the qualified decline, not the defect.
 
-TC-02 adds a naive-join fixture that fails its grain test and leaves `get_metric` on the clean data at 42 and 24.
+`dbt/models/fixtures/fanout_appointment_capacity.sql` is that naive join. `tests/test_data_product.py` asserts its slot grain fails uniqueness and that `get_metric` on the clean data stays 42 and 24. `dbt/tests/assert_naive_join_fans_out.sql` fails the dbt run if the duplicate rows disappear.
 
 dbt layout stays:
 
@@ -97,6 +101,7 @@ dbt layout stays:
 dbt/models/bronze/
 dbt/models/silver/
 dbt/models/gold/
+dbt/models/fixtures/
 ```
 
 dbt is build-time documentation of the bookability predicate. Request-time authority is the SQLite or Postgres read in `get_metric`. The dbt project is optional and is not required to run the control-plane demo.
@@ -150,7 +155,7 @@ This version does not add:
 - a warehouse table format or a container orchestrator added as a keyword
 - a compliance-certification claim, or a claim of production adoption
 - a claim that MCP or an agent wire protocol provides orchestration or finality
-- a claim that the metric contract is already versioned, classified, or freshness-gated
+- a claim that the freshness SLO is already enforced. It is declared as 1440 minutes and checked in TC-04
 
 ## Acceptance traced here
 
