@@ -1,0 +1,40 @@
+{
+  "policy_id": "provider-detail-access",
+  "policy_version": 1,
+  "organization_id": "tenant-demo",
+  "rules": [
+    {
+      "rule_id": "provider_detail_analyst",
+      "principal_roles": ["analyst"],
+      "organization_scope": "same_tenant",
+      "allowed_purposes": ["operations_analysis"],
+      "allowed_classes": ["public", "operations"],
+      "field_actions": {
+        "credential_notes": "deny",
+        "provider_name": "mask"
+      }
+    },
+    {
+      "rule_id": "provider_detail_operations",
+      "principal_roles": ["operations"],
+      "organization_scope": "same_tenant",
+      "allowed_purposes": ["operations_analysis"],
+      "allowed_classes": ["public", "operations"],
+      "field_actions": {
+        "credential_notes": "deny",
+        "provider_name": "allow"
+      }
+    },
+    {
+      "rule_id": "provider_detail_clinical_admin",
+      "principal_roles": ["clinical_admin"],
+      "organization_scope": "same_tenant",
+      "allowed_purposes": ["operations_analysis"],
+      "allowed_classes": ["public", "operations", "restricted"],
+      "field_actions": {
+        "credential_notes": "allow",
+        "provider_name": "allow"
+      }
+    }
+  ]
+}

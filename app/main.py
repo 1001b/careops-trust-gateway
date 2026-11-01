@@ -8,13 +8,15 @@ import uuid
 from collections import defaultdict, deque
 from threading import Lock
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from careops.agent import answer as agent_answer
 from careops.agent.llm import llm_configured
 from careops.gateway import answer as gateway_answer
+from careops.identity import bounded_demo_role
+from careops.protected import protected_query
 from careops.storage import using_postgres
 
 MAX_PROMPT = int(os.environ.get("CAREOPS_MAX_PROMPT_CHARS", "800"))
@@ -37,6 +39,13 @@ class DemoRequest(BaseModel):
     role: str = Field(default="analyst", pattern="^(analyst|operations|clinical_admin)$")
     mode: str = Field(default="governed", pattern="^(governed|naive|gateway)$")
     synthesize: bool = False
+
+
+class QueryRequest(BaseModel):
+    """Protected body. Role and tenant are not fields, and extras are ignored."""
+
+    model_config = ConfigDict(extra="ignore")
+    question: str = Field(..., min_length=1, max_length=MAX_PROMPT)
 
 
 def _client_ip(request: Request) -> str:
@@ -98,14 +107,15 @@ def demo(req: DemoRequest, request: Request):
     request_id = str(uuid.uuid4())
     started = time.time()
 
+    principal = bounded_demo_role(req.role)
     if req.mode == "gateway":
-        result = gateway_answer(req.question, role=req.role).as_dict()
+        result = gateway_answer(req.question, role=principal.role).as_dict()
         payload = {"status": result["status"], "answer": result["answer"], "evidence": result}
     else:
         payload = agent_answer(
             req.question,
             mode=req.mode,
-            role=req.role,
+            role=principal.role,
             synthesize=req.synthesize,
         )
 
@@ -113,11 +123,22 @@ def demo(req: DemoRequest, request: Request):
         {
             "request_id": request_id,
             "latency_ms": int((time.time() - started) * 1000),
-            "role": req.role,
+            "role": principal.role,
+            "principal": principal.principal,
             "mode": req.mode,
             **payload,
         }
     )
+
+
+@app.post("/v1/query")
+def query(req: QueryRequest, authorization: str | None = Header(default=None)):
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="malformed")
+    token = authorization.split(" ", 1)[1].strip()
+    result = protected_query(token, req.question)
+    status = result.pop("http_status")
+    return JSONResponse(status_code=status, content=result)
 
 
 @app.get("/", response_class=HTMLResponse)

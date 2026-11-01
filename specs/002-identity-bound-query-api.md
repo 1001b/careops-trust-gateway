@@ -2,7 +2,7 @@
 
 **Status:** TC-01 specification freeze. No runtime change.
 **Baseline:** git tag `careops-v0.3-qualified`.
-**Implements later:** TC-03 for the protected route, TC-04 for freshness and the trace emitter, TC-05 for cross-interface assertions.
+**TC-03:** `POST /v1/query` verifies a local HS256 token and applies `semantic/governance.json` before retrieval. The demo role switch remains a server-side allowlist. Freshness gating is still TC-04.
 
 ## Decision
 
