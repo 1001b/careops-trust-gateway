@@ -1,8 +1,9 @@
 # 003 — Context and control contracts
 
-**Status:** TC-01 specification freeze. No runtime change.
+**Status:** TC-01 specification freeze. No runtime change on the qualified tag.
 **Baseline:** git tag `careops-v0.3-qualified` has none of these objects.
-**Implements later:** TC-06 events, TC-07 ontology and temporal context, TC-08 control plane, TC-09 delegation and one promotion.
+**TC-06:** `careops/events` commits a change and its outbox row in one transaction, then publishes through an in-process transport. Consumers are an audit log, a current-state projection, and a local episode store. Graphiti remains TC-07. `get_metric` and `POST /v1/query` do not import this package.
+**Implements later:** TC-07 ontology and temporal context, TC-08 control plane, TC-09 delegation and one promotion.
 
 Names below are the contracts. Graphiti is the named temporal-context adapter. Jev is an optional decision-gate adapter. An agent wire protocol is an optional transport. A Kafka-compatible broker is an optional local profile. None of them are imported by the tagged tree. CI uses deterministic local stand-ins, and the architecture stays valid without the optional processes.
 
