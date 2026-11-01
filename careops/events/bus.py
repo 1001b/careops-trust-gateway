@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 
+from careops.context.episode import project_episode
 from careops.events.outbox import BrokerUnavailable
 from careops.events.schema import SchemaError, validate_event
 
@@ -115,23 +116,7 @@ class EpisodeStore:
         if event["event_id"] in self._seen:
             return
         self._seen.add(event["event_id"])
-        self.episodes.append(
-            {
-                "episode_id": event["event_id"],
-                "organization_id": event["organization_id"],
-                "event_type": event["event_type"],
-                "reference_time": event["occurred_at"],
-                "observed_at": event["observed_at"],
-                "source_type": "domain_event",
-                "source_id": event["event_id"],
-                "subject_refs": list(event["subject_refs"]),
-                "classification": event["classification"],
-                "validity_type": "COMMITTED",
-                "trace_id": event["trace_id"],
-                "correlation_id": event["correlation_id"],
-                "causation_id": event["causation_id"],
-            }
-        )
+        self.episodes.append(project_episode(event))
 
     def for_organization(self, organization_id: str) -> list[dict]:
         return [row for row in self.episodes if row["organization_id"] == organization_id]

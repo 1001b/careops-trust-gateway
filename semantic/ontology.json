@@ -1,0 +1,25 @@
+{
+  "entities": [
+    "AppointmentCapacity",
+    "ChangeEvent",
+    "CredentialingCase",
+    "DataProduct",
+    "Incident",
+    "MetricContract",
+    "Network",
+    "Organization",
+    "Policy",
+    "Provider"
+  ],
+  "relationships": [
+    "AFFECTS",
+    "CONTRIBUTED_TO",
+    "DERIVED_FROM",
+    "GOVERNED_BY",
+    "OBSERVED_IN",
+    "OWNED_BY",
+    "PARTICIPATES_IN",
+    "RELATED_TO",
+    "SUPERSEDES"
+  ]
+}

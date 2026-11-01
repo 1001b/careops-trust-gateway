@@ -1,0 +1,150 @@
+[
+  {
+    "episode_id": "ep-p002-eligible",
+    "organization_id": "tenant-demo",
+    "event_type": "provider.network_status_changed",
+    "reference_time": "2026-01-01T00:00:00+00:00",
+    "observed_at": "2026-01-01T00:00:00+00:00",
+    "source_type": "fixture",
+    "source_id": "ep-p002-eligible",
+    "subject_refs": ["provider:P002", "network:Aetna"],
+    "payload": {
+      "relationship": "PARTICIPATES_IN",
+      "status": "eligible",
+      "effective_from": "2026-01-01",
+      "effective_to": "2026-09-29"
+    },
+    "classification": "internal",
+    "provenance": {"source_type": "fixture", "source_id": "ep-p002-eligible", "store_authority": false, "validity_means": "source_transition_committed"},
+    "validity_type": "COMMITTED",
+    "trace_id": "trace-fixture-p002-eligible",
+    "correlation_id": "corr-fixture-p002",
+    "causation_id": ""
+  },
+  {
+    "episode_id": "ep-p002-inactive",
+    "organization_id": "tenant-demo",
+    "event_type": "provider.network_status_changed",
+    "reference_time": "2026-09-30T00:00:00+00:00",
+    "observed_at": "2026-09-30T00:00:00+00:00",
+    "source_type": "fixture",
+    "source_id": "ep-p002-inactive",
+    "subject_refs": ["provider:P002", "network:Aetna"],
+    "payload": {
+      "relationship": "PARTICIPATES_IN",
+      "status": "inactive",
+      "effective_from": "2026-09-30",
+      "supersedes": "ep-p002-eligible"
+    },
+    "classification": "internal",
+    "provenance": {"source_type": "fixture", "source_id": "ep-p002-inactive", "store_authority": false, "validity_means": "source_transition_committed"},
+    "validity_type": "COMMITTED",
+    "trace_id": "trace-fixture-p002-inactive",
+    "correlation_id": "corr-fixture-p002",
+    "causation_id": "ep-p002-eligible"
+  },
+  {
+    "episode_id": "ep-p003-pending",
+    "organization_id": "tenant-demo",
+    "event_type": "provider.network_status_changed",
+    "reference_time": "2026-10-01T00:00:00+00:00",
+    "observed_at": "2026-10-01T00:00:00+00:00",
+    "source_type": "fixture",
+    "source_id": "ep-p003-pending",
+    "subject_refs": ["provider:P003", "network:Aetna"],
+    "payload": {
+      "relationship": "PARTICIPATES_IN",
+      "status": "pending",
+      "effective_from": "2026-10-01"
+    },
+    "classification": "internal",
+    "provenance": {"source_type": "fixture", "source_id": "ep-p003-pending", "store_authority": false, "validity_means": "source_transition_committed"},
+    "validity_type": "COMMITTED",
+    "trace_id": "trace-fixture-p003",
+    "correlation_id": "corr-fixture-p003",
+    "causation_id": ""
+  },
+  {
+    "episode_id": "ep-p002-inferred",
+    "organization_id": "tenant-demo",
+    "event_type": "provider.network_status_changed",
+    "reference_time": "2026-09-20T00:00:00+00:00",
+    "observed_at": "2026-09-21T00:00:00+00:00",
+    "source_type": "fixture",
+    "source_id": "ep-p002-inferred",
+    "subject_refs": ["provider:P002"],
+    "payload": {
+      "relationship": "RELATED_TO",
+      "status": "eligible",
+      "note": "synthetic resemblance only"
+    },
+    "classification": "internal",
+    "provenance": {"source_type": "fixture", "source_id": "ep-p002-inferred", "store_authority": false, "validity_means": "not_an_authority_commit"},
+    "validity_type": "INFERRED",
+    "trace_id": "trace-fixture-p002-inferred",
+    "correlation_id": "corr-fixture-p002",
+    "causation_id": ""
+  },
+  {
+    "episode_id": "ep-p002-proposed",
+    "organization_id": "tenant-demo",
+    "event_type": "provider.network_status_changed",
+    "reference_time": "2026-09-25T00:00:00+00:00",
+    "observed_at": "2026-09-25T00:00:00+00:00",
+    "source_type": "fixture",
+    "source_id": "ep-p002-proposed",
+    "subject_refs": ["provider:P002"],
+    "payload": {
+      "relationship": "RELATED_TO",
+      "status": "pending"
+    },
+    "classification": "internal",
+    "provenance": {"source_type": "fixture", "source_id": "ep-p002-proposed", "store_authority": false, "validity_means": "not_an_authority_commit"},
+    "validity_type": "PROPOSED",
+    "trace_id": "trace-fixture-p002-proposed",
+    "correlation_id": "corr-fixture-p002",
+    "causation_id": ""
+  },
+  {
+    "episode_id": "ep-policy-future",
+    "organization_id": "tenant-demo",
+    "event_type": "policy.version_activated",
+    "reference_time": "2026-10-15T00:00:00+00:00",
+    "observed_at": "2026-10-15T00:00:00+00:00",
+    "source_type": "fixture",
+    "source_id": "ep-policy-future",
+    "subject_refs": ["policy:network-eligibility"],
+    "payload": {
+      "relationship": "SUPERSEDES",
+      "policy_id": "network-eligibility",
+      "effective_from": "2026-10-15"
+    },
+    "classification": "internal",
+    "provenance": {"source_type": "fixture", "source_id": "ep-policy-future", "store_authority": false, "validity_means": "source_transition_committed"},
+    "validity_type": "COMMITTED",
+    "trace_id": "trace-fixture-future-policy",
+    "correlation_id": "corr-fixture-policy",
+    "causation_id": ""
+  },
+  {
+    "episode_id": "ep-other-tenant-p002",
+    "organization_id": "tenant-other",
+    "event_type": "provider.network_status_changed",
+    "reference_time": "2026-09-15T00:00:00+00:00",
+    "observed_at": "2026-09-15T00:00:00+00:00",
+    "source_type": "fixture",
+    "source_id": "ep-other-tenant-p002",
+    "subject_refs": ["provider:P002", "network:Aetna"],
+    "payload": {
+      "relationship": "PARTICIPATES_IN",
+      "status": "eligible",
+      "effective_from": "2026-01-01"
+    },
+    "classification": "internal",
+    "provenance": {"source_type": "fixture", "source_id": "ep-other-tenant-p002", "store_authority": false, "validity_means": "source_transition_committed"},
+    "validity_type": "COMMITTED",
+    "trace_id": "trace-fixture-other",
+    "correlation_id": "corr-fixture-other",
+    "causation_id": ""
+  }
+]

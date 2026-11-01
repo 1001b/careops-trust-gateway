@@ -2,8 +2,9 @@
 
 **Status:** TC-01 specification freeze. No runtime change on the qualified tag.
 **Baseline:** git tag `careops-v0.3-qualified` has none of these objects.
-**TC-06:** `careops/events` commits a change and its outbox row in one transaction, then publishes through an in-process transport. Consumers are an audit log, a current-state projection, and a local episode store. Graphiti remains TC-07. `get_metric` and `POST /v1/query` do not import this package.
-**Implements later:** TC-07 ontology and temporal context, TC-08 control plane, TC-09 delegation and one promotion.
+**TC-06:** `careops/events` commits a change and its outbox row in one transaction, then publishes through an in-process transport. Consumers are an audit log, a current-state projection, and a local episode store. `get_metric` and `POST /v1/query` do not import this package.
+**TC-07:** `careops/context` is the temporal plane. CI uses `LocalTemporalStore` and the synthetic fixture in `semantic/episodes.json`. `GraphitiTemporalStore` is the optional adapter and is not a health dependency of the synchronous query. `validity_type=COMMITTED` means the episode was projected from a committed authoritative event. It does not make the graph copy authoritative.
+**Implements later:** TC-08 control plane, TC-09 delegation and one promotion.
 
 Names below are the contracts. Graphiti is the named temporal-context adapter. Jev is an optional decision-gate adapter. An agent wire protocol is an optional transport. A Kafka-compatible broker is an optional local profile. None of them are imported by the tagged tree. CI uses deterministic local stand-ins, and the architecture stays valid without the optional processes.
 
@@ -53,7 +54,7 @@ validity_type:
 OBSERVED | INFERRED | PROPOSED | VERIFIED | COMMITTED | REJECTED | SUPERSEDED
 ```
 
-The store may hold every type. Only an Authority Plane commit writes `COMMITTED`. Repetition cannot promote `INFERRED` to `VERIFIED` or `COMMITTED`.
+The store may hold every type. Only an Authority Plane commit writes `COMMITTED`, and that word describes the source transition. A graph copy of a `COMMITTED` episode is still context. Repetition cannot promote `INFERRED` to `VERIFIED` or `COMMITTED`.
 
 `TemporalContextStore` operations the later adapter must provide:
 

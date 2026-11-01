@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from time import perf_counter
 
 from careops.conformance import governed_view
+from careops.context.query import contextualize, evidence_planes
 from careops.freshness import FreshnessError, evaluate, not_applicable
 from careops.gateway import answer as gateway_answer
 from careops.governance import ContractError, apply_field_policy, authorize, validate_contracts
@@ -105,6 +106,7 @@ def protected_query(
         extra: dict | None = None,
         as_of: str | None = None,
         provenance: list[str] | None = None,
+        temporal_status: str = "not_requested",
     ):
         contract_id = None
         contract_version = None
@@ -131,6 +133,10 @@ def protected_query(
                 "latency_ms": int((perf_counter() - started) * 1000),
                 "outcome": outcome,
                 "reason_code": reason_code,
+                "evidence_planes": evidence_planes(
+                    evidence if isinstance(evidence, list) else None,
+                    temporal_status,
+                ),
             }
         )
         body = {
@@ -253,12 +259,24 @@ def protected_query(
         source_ids = list(raw.provenance)
     evidence = apply_field_policy(raw.evidence, identity.role)
     outcome = "allow" if raw.status == "ok" else "abstain"
+    temporal_status = "not_requested"
+    note = None
+    if outcome == "allow":
+        evidence, temporal_status, note = contextualize(
+            evidence,
+            organization_id=identity.tenant,
+            as_of=raw.as_of,
+        )
+    answer = _render(evidence, raw.answer)
+    if note:
+        answer = f"{answer} {note}"
     return finish(
         http_status=200,
         outcome=outcome,
         reason_code=raw.status,
         evidence=evidence,
-        answer=_render(evidence, raw.answer),
+        answer=answer,
+        temporal_status=temporal_status,
         extra={
             "policy_version": decision.policy_version,
             "matched_rule_id": decision.rule_id,

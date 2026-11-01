@@ -24,6 +24,7 @@ FIELDS = (
     "latency_ms",
     "outcome",
     "reason_code",
+    "evidence_planes",
 )
 
 # Defense in depth. The envelope is not supposed to carry these.
