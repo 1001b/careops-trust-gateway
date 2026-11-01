@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from careops.agent import answer as agent_answer
 from careops.agent.llm import llm_configured
 from careops.gateway import answer as gateway_answer
+from careops.freshness import readiness
 from careops.identity import bounded_demo_role
 from careops.protected import protected_query
 from careops.storage import using_postgres
@@ -82,6 +83,13 @@ def health():
         "llm_configured": llm_configured(),
         "synthetics_only": True,
     }
+
+
+@app.get("/ready")
+def ready():
+    report = readiness()
+    code = 200 if report["status"] == "ready" else 503
+    return JSONResponse(status_code=code, content=report)
 
 
 @app.get("/api/demo-info")

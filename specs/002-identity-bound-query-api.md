@@ -2,7 +2,8 @@
 
 **Status:** TC-01 specification freeze. No runtime change.
 **Baseline:** git tag `careops-v0.3-qualified`.
-**TC-03:** `POST /v1/query` verifies a local HS256 token and applies `semantic/governance.json` before retrieval. The demo role switch remains a server-side allowlist. Freshness gating is still TC-04.
+**TC-03:** `POST /v1/query` verifies a local HS256 token and applies `semantic/governance.json` before retrieval. The demo role switch remains a server-side allowlist.
+**TC-04:** A protected metric route checks source age before retrieval. A miss returns `stale_evidence` with `model_called` false. Every protected request emits one decision envelope from `careops.trace`. A metric-dependency timeout returns `dependency_failure` on that same trace. `GET /ready` names the affected data product.
 
 ## Decision
 
@@ -98,7 +99,7 @@ A multi-agent workflow trace is a wider record. It keeps the query fields and ad
 
 `HUMAN_REVIEW` does not mean the database changed. `ALLOW` does not mean the commit succeeded. A commit still has to pass the expected entity version.
 
-On a query that never opens a workflow, `workflow_id`, `agents`, `proposal_id`, and the version fields are empty. The demo path keeps emitting today's `GatewayResponse` until a later card maps it. This card does not add the emitter.
+On a query that never opens a workflow, `workflow_id`, `agents`, `proposal_id`, and the version fields stay empty. TC-04 emits the query envelope from `careops.trace.emit` for `POST /v1/query` only. The demo path still returns today's `GatewayResponse`.
 
 Envelope rules:
 
@@ -106,7 +107,7 @@ Envelope rules:
 - Logs carry component, duration, outcome, and reason code.
 - Logs omit secrets, tokens, and restricted document bodies.
 - OpenTelemetry export is out of scope.
-- One dependency timeout is specified for TC-04: explicit class, same `trace_id`, no invented metric. No retry framework in this card.
+- One dependency timeout is implemented: class `dependency_timeout`, the same `trace_id`, and no invented metric. There is no retry framework.
 
 ## Governance contract
 

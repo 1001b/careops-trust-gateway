@@ -1,0 +1,7 @@
+{
+  "gold_provider_availability_daily": {
+    "source_id": "gold_provider_availability_daily",
+    "data_product": "available_appointments",
+    "loaded_at": "2026-10-05T00:00:00+00:00"
+  }
+}

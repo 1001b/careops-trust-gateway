@@ -3,7 +3,8 @@
 **Status:** TC-01 specification freeze. No runtime change.
 **Baseline:** git tag `careops-v0.3-qualified`.
 **Authority:** v0.4 system design, with this file recording where an example name differs from the tagged code.
-**TC-02:** Contract version 1 is published in `semantic/metrics.json`. The freshness gate is still TC-04.
+**TC-02:** Contract version 1 is published in `semantic/metrics.json`.
+**TC-04:** The protected metric path compares `loaded_at` in `semantic/source_freshness.json` with the demo clock `2026-10-05` and the declared 1440-minute SLO.
 
 ## Decision
 
@@ -78,7 +79,7 @@ Rules for the future field set:
 - A change to definition, grain, filter semantics, or the numeric result requires a new `contract_version`.
 - Missing version bump on a semantic or access change is a failed replay (see ADR-013). The replay command is TC-05.
 - `classification` and `allowed_purposes` are inputs to field policy. They do not by themselves mask rows.
-- Freshness becomes a check, `source_age <= freshness_slo`, in TC-04. Failure outcome is `stale_evidence` and the model is not called. The word `daily` does not perform that check today.
+- Freshness is the check `source_age <= freshness_slo` in `careops.freshness`. Age is the demo clock minus `loaded_at`. A miss on a protected metric route returns `stale_evidence` and does not call a model. The word `daily` does not perform that check.
 
 ## Grain
 
@@ -155,7 +156,7 @@ This version does not add:
 - a warehouse table format or a container orchestrator added as a keyword
 - a compliance-certification claim, or a claim of production adoption
 - a claim that MCP or an agent wire protocol provides orchestration or finality
-- a claim that the freshness SLO is already enforced. It is declared as 1440 minutes and checked in TC-04
+- a claim that the public demo path enforces the freshness SLO. The gate runs on the protected metric route. `/api/demo` still returns the qualified gateway result
 
 ## Acceptance traced here
 
