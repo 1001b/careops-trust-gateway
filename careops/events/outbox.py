@@ -22,6 +22,12 @@ class BrokerUnavailable(Exception):
         super().__init__("broker_unavailable")
 
 
+class VersionConflict(Exception):
+    def __init__(self):
+        self.code = "stale_version"
+        super().__init__("stale_version")
+
+
 def _connect(path: Path) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     conn.isolation_level = None
@@ -57,6 +63,24 @@ def _connect(path: Path) -> sqlite3.Connection:
             status TEXT NOT NULL,
             detail TEXT,
             PRIMARY KEY (event_id, consumer)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS entity_versions (
+            organization_id TEXT NOT NULL,
+            subject_key TEXT NOT NULL,
+            version TEXT NOT NULL,
+            PRIMARY KEY (organization_id, subject_key)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS promotion_keys (
+            promotion_key TEXT PRIMARY KEY,
+            receipt_json TEXT NOT NULL
         )
         """
     )
@@ -114,6 +138,121 @@ class ChangeStore:
         finally:
             conn.close()
         return {"committed": True, "change_id": change_id, "event_id": event["event_id"], "published": False}
+
+    def entity_version(self, organization_id: str, subject_key: str) -> str:
+        conn = _connect(self.path)
+        try:
+            row = conn.execute(
+                """
+                SELECT version FROM entity_versions
+                WHERE organization_id = ? AND subject_key = ?
+                """,
+                (organization_id, subject_key),
+            ).fetchone()
+            return row["version"] if row else "0"
+        finally:
+            conn.close()
+
+    def promotion_receipt(self, promotion_key: str) -> dict | None:
+        conn = _connect(self.path)
+        try:
+            row = conn.execute(
+                "SELECT receipt_json FROM promotion_keys WHERE promotion_key = ?",
+                (promotion_key,),
+            ).fetchone()
+            return json.loads(row["receipt_json"]) if row else None
+        finally:
+            conn.close()
+
+    def commit_if_current(self, event: dict, *, expected_version: str, promotion_key: str) -> dict:
+        """Commit only when the subject is still at expected_version. One transaction covers the row, the outbox, and the version."""
+        validate_event(event)
+        subject_key = "|".join(event["subject_refs"])
+        conn = _connect(self.path)
+        try:
+            conn.execute("BEGIN")
+            existing = conn.execute(
+                "SELECT receipt_json FROM promotion_keys WHERE promotion_key = ?",
+                (promotion_key,),
+            ).fetchone()
+            if existing is not None:
+                conn.execute("COMMIT")
+                receipt = json.loads(existing["receipt_json"])
+                receipt["idempotent"] = True
+                return receipt
+            current = conn.execute(
+                """
+                SELECT version FROM entity_versions
+                WHERE organization_id = ? AND subject_key = ?
+                """,
+                (event["organization_id"], subject_key),
+            ).fetchone()
+            current_version = current["version"] if current else "0"
+            if str(current_version) != str(expected_version):
+                conn.execute("ROLLBACK")
+                raise VersionConflict()
+            change_id = str(uuid.uuid4())
+            state = {
+                "change_id": change_id,
+                "event_id": event["event_id"],
+                "event_type": event["event_type"],
+                "organization_id": event["organization_id"],
+                "subject_refs": event["subject_refs"],
+                "occurred_at": event["occurred_at"],
+                "payload": event["payload"],
+            }
+            conn.execute(
+                """
+                INSERT INTO committed_changes (
+                    change_id, organization_id, subject_key, state_json, occurred_at, event_id
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    change_id,
+                    event["organization_id"],
+                    subject_key,
+                    json.dumps(state, sort_keys=True),
+                    event["occurred_at"],
+                    event["event_id"],
+                ),
+            )
+            conn.execute(
+                """
+                INSERT INTO outbox (event_id, event_json, status, attempts, last_error)
+                VALUES (?, ?, 'pending', 0, NULL)
+                """,
+                (event["event_id"], json.dumps(event, sort_keys=True)),
+            )
+            new_version = str(int(expected_version) + 1)
+            conn.execute(
+                """
+                INSERT INTO entity_versions (organization_id, subject_key, version)
+                VALUES (?, ?, ?)
+                ON CONFLICT(organization_id, subject_key) DO UPDATE SET version = excluded.version
+                """,
+                (event["organization_id"], subject_key, new_version),
+            )
+            receipt = {
+                "committed": True,
+                "idempotent": False,
+                "change_id": change_id,
+                "event_id": event["event_id"],
+                "version": new_version,
+                "event": event,
+            }
+            conn.execute(
+                "INSERT INTO promotion_keys (promotion_key, receipt_json) VALUES (?, ?)",
+                (promotion_key, json.dumps(receipt, sort_keys=True)),
+            )
+            conn.execute("COMMIT")
+            return receipt
+        except VersionConflict:
+            raise
+        except Exception:
+            conn.execute("ROLLBACK")
+            raise
+        finally:
+            conn.close()
 
     def counts(self) -> dict:
         conn = _connect(self.path)

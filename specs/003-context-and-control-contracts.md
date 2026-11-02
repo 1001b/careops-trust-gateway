@@ -5,7 +5,8 @@
 **TC-06:** `careops/events` commits a change and its outbox row in one transaction, then publishes through an in-process transport. Consumers are an audit log, a current-state projection, and a local episode store. `get_metric` and `POST /v1/query` do not import this package.
 **TC-07:** `careops/context` is the temporal plane. CI uses `LocalTemporalStore` and the synthetic fixture in `semantic/episodes.json`. `GraphitiTemporalStore` is the optional adapter and is not a health dependency of the synchronous query. `validity_type=COMMITTED` means the episode was projected from a committed authoritative event. It does not make the graph copy authoritative.
 **TC-08:** `careops/control` stores workflows, tasks, proposals, and decisions in a local SQLite file. A proposal status of `COMMITTED` is ledger state. It does not write the metric or the event outbox. CI uses `FixtureDecisionGate`. Jev is not required.
-**Implements later:** TC-09 delegation and one promotion.
+**TC-09:** One promotion runs the three specialists through the control plane. A matching authority version writes one domain event and projects a `COMMITTED` episode. A decision, an approval, or a second workflow still at the old version does not.
+**Implements later:** public qualification.
 
 Names below are the contracts. Graphiti is the named temporal-context adapter. Jev is an optional decision-gate adapter. An agent wire protocol is an optional transport. A Kafka-compatible broker is an optional local profile. None of them are imported by the tagged tree. CI uses deterministic local stand-ins, and the architecture stays valid without the optional processes.
 
