@@ -49,7 +49,7 @@ Phase 6  events and outbox
 Phase 7  ontology and temporal context
 Phase 8  control plane and workflow state
 Phase 9  one controlled delegation and one promotion
-Phase 10 public qualification
+Phase 10 public qualification — README only; no new runtime
 ```
 
 ## Tradeoffs
